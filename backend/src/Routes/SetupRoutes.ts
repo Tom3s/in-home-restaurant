@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from 'express';
 import { ApiResponse } from '../Model/StateModels';
 import Controller from '../Controller/Controller';
+import { SavableProductMatches } from '../Model/GlovoModels';
 
 
 function setupRoutes(app: Express, controller: Controller): void {
@@ -72,6 +73,27 @@ function setupRoutes(app: Express, controller: Controller): void {
 
 	// POST /api/login - login a user
 	app.post('/api/login', async (request: Request, response: Response) => {
+		const body = request.body;
+
+		if (!body) {
+			response.status(400).send('Missing request body.');
+			return;
+		}
+
+		if (!body.username || !body.password) {
+			var missingFields: string[] = [];
+			if (!body.username) {
+				missingFields.push('username');
+			}
+			if (!body.password) {
+				missingFields.push('password');
+			}
+			const responseMessage = `Missing required fields: ${missingFields.join(', ')}`;
+			response.status(400).send(responseMessage);
+			return;
+		}
+
+
 		const username = request.body.username;
 		const password = request.body.password;
 
@@ -85,6 +107,71 @@ function setupRoutes(app: Express, controller: Controller): void {
 					.send(loginResponse.message);
 		}
 	});
+
+	// GET /api/products/search - search for products
+	app.get('/api/products/search', async (request: Request, response: Response) => {
+		const productName = request.query.name as string;
+
+		if (!productName) {
+			response.status(400).send('Missing product name.');
+			return;
+		}
+
+		const searchResponse: ApiResponse = await controller.searchProducts(productName);
+
+		if (searchResponse.success) {
+			response.status(searchResponse.status)
+					.send(searchResponse.data);
+		}
+		else {
+			response.status(searchResponse.status)
+					.send(searchResponse.message);
+		}
+	});
+
+	// POST /api/products/save - save a product
+	app.post('/api/products/save', async (request: Request, response: Response) => {
+		const token = request.headers.token as string;
+
+		if (!token) {
+			response.status(400).send('Missing token.');
+			return;
+		}
+		
+		const body = request.body;
+
+		if (!body) {
+			response.status(400).send('Missing request body.');
+			return;
+		}
+
+		const apiResponse: ApiResponse = await controller.saveProductMatches(token, body as SavableProductMatches);
+
+		response.status(apiResponse.status).send(apiResponse.message);
+	});
+
+	// GET /api/products/cheapest - get the cheapest product
+	app.get('/api/products/cheapest', async (request: Request, response: Response) => {
+		if (!request.query.name) {
+			response.status(400).send('Missing product name in query.');
+			return;
+		}
+		
+		const productName = request.query.name as string;
+
+		const apiResponse: ApiResponse = await controller.getCheapestProduct(productName);
+
+		if (apiResponse.success) {
+			response.status(apiResponse.status)
+					.send(apiResponse.data);
+		} else {
+			response.status(apiResponse.status)
+					.send(apiResponse.message);
+		}
+	});
+
+		
+
 
 	
 }
