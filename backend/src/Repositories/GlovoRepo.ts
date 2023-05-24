@@ -26,6 +26,9 @@ class GlovoRepository {
 				.then((data: GlovoResults) => {
 					const products = data.results[0].products;
 					for (const product of products) {
+						if (!product.name.toLowerCase().includes(searchTerm)) {
+							continue;
+						}
 						foundProducts.push({
 							id: product.id,
 							name: product.name,
