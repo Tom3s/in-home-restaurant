@@ -1,0 +1,5 @@
+
+.vscode/settings.json
+backend/node_modules/**/*
+backend/dist/**/*
+backend/logs/**/*
