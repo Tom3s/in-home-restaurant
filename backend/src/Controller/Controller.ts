@@ -1,17 +1,21 @@
 import LOGGER from "../Logger/logger";
+import { GLOVO_API_URLS, ProductMatch, SavableProductMatches } from "../Model/GlovoModels";
 import { ApiResponse } from "../Model/StateModels";
 import { SessionDetails } from "../Model/UserModels";
 import AuthenticationRepository from "../Repositories/AuthenticationRepo";
+import GlovoRepository from "../Repositories/GlovoRepo";
 import UserRepository from "../Repositories/UserRepo";
 
 class Controller {
 	private loggerPrefix: string = '[Controller]';
 	private authenticationRepository: AuthenticationRepository;
 	private userRepository: UserRepository;
+	private glovoRepository: GlovoRepository;
 
 	constructor() {
 		this.authenticationRepository = new AuthenticationRepository();
 		this.userRepository = new UserRepository();
+		this.glovoRepository = new GlovoRepository();
 	}
 
 	async getUserRegistrationToken(username: string, email: string, password: string): Promise<ApiResponse> {
@@ -155,6 +159,29 @@ class Controller {
 				email: sessionDetails.email,
 			},
 		}
+	}
+
+	// Products
+	async searchProducts(searchTerm: string): Promise<ApiResponse> {
+		return this.glovoRepository.searchGlovoProducts(searchTerm);
+	}
+
+	async saveProductMatches(token: string, productMatches: SavableProductMatches): Promise<ApiResponse> {
+		const tokenData = AuthenticationRepository.decodeTokenData(token);
+
+		if (!tokenData) {
+			return {
+				success: false,
+				status: 400,
+				message: `Invalid token.`,
+			};
+		}
+
+		return this.glovoRepository.saveBulkProducts(productMatches);
+	}
+
+	async getCheapestProduct(productName: string): Promise<ApiResponse> {
+		return this.glovoRepository.getCheapestProduct(productName);
 	}
 }
 
